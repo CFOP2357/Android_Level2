@@ -1,0 +1,123 @@
+CREATE DATABASE
+	se utiliza para crear una nueva base de datos vacía.
+DROP DATABASE
+	se utiliza para eliminar completamente una base de datos existente.
+CREATE TABLE
+	se utiliza para crear una nueva tabla, donde la información se almacena realmente.
+ALTER TABLE
+	se utiliza para modificar una tabla ya existente.
+DROP TABLE
+	se utiliza para eliminar por completo una tabla existente.
+
+Manipulando los datos.
+SELECT: se utiliza cuando quieres leer (o seleccionar) tus datos.
+INSERT: se utiliza cuando quieres añadir (o insertar) nuevos datos.
+UPDATE: se utiliza cuando quieres cambiar (o actualizar) datos existentes.
+DELETE: se utiliza cuando quieres eliminar (o borrar) datos existentes.
+REPLACE: se utiliza cuando quieres añadir o cambiar (o reemplazar) datos nuevos o ya existentes.
+TRUNCATE: se utiliza cuando quieres vaciar (o borrar) todos los datos de la plantilla.
+
+Ejemplos:
+CREATE DATABASE mydb;
+USE mydb;
+CREATE TABLE mitabla ( id INT PRIMARY KEY, nombre VARCHAR(20) );
+INSERT INTO mitabla VALUES ( 1, 'Will' );
+INSERT INTO mitabla VALUES ( 2, 'Marry' );
+INSERT INTO mitabla VALUES ( 3, 'Dean' );
+
+SELECT id, nombre FROM mitabla WHERE id = 1;
+UPDATE mitabla SET nombre = 'Willy' WHERE id = 1;
+SELECT id, nombre FROM mitabla;
+DELETE FROM mitabla WHERE id = 1;
+SELECT id, nombre FROM mitabla;
+DROP DATABASE mydb;
+SELECT count(1) from mitabla; da el número de registros en la tabla
+
+//Cuenta de empleados, ordenar por sexo
+select count(*) as EMPLEADOS
+    from EMPLEADOS
+group by SEXO
+
+//¿cuantos perros de cada sexo hay en total actualmente en el centro?
+  select SEXO,count(*) as PERROS_VIGENTES
+    from MASCOTAS
+   where ESPECIE = 'P' and ESTADO = 'A'
+group by SEXO
+
+//¿Cuantos ejemplares contiene actualmente cada jaula o ubicación?
+ select UBICACION , count(*) as EJEMPLARES
+    from MASCOTAS
+   where ESTADO = 'A'
+group by UBICACION
+
+Ejemplo 1:  Selección de todas las columnas y filas de la tabla EMPLOYEE.
+  SELECT * FROM EMPLOYEE
+
+Ejemplo 2:  Selección del nombre del proyecto (PROJNAME), la fecha de inicio (PRSTDATE) y la fecha de finalización (PRENDATE) de la tabla PROJECT. Ordenación de la tabla resultante por la fecha de finalización con las fechas más recientes primero.
+
+  SELECT PROJNAME, PRSTDATE, PRENDATE
+   FROM PROJECT          
+   ORDER BY PRENDATE DESC
+
+Ejemplo 3:  Selección del número de departamento (WORKDEPT) y el salario medio del departamento (SALARY) para todos los departamentos de la tabla EMPLOYEE. Ordenación la tabla resultante por orden ascendente por el salario medio del departamento.
+
+  SELECT WORKDEPT, AVG(SALARY)
+     FROM EMPLOYEE   
+     GROUP BY WORKDEPT 
+     ORDER BY 2
+
+Ejemplo 4:  Declaración de un cursor llamado UP_CUR para utilizarlo en un programa C para actualizar las columnas de fecha de inicio (PRSTDATE) y de fecha de finalización (PRENDATE) en la tabla PROJECT. El programa debe recibir los dos valores junto con el valor de número del proyecto (PROJNO) para cada fila.
+
+  EXEC SQL  DECLARE UP_CUR CURSOR FOR
+              SELECT PROJNO, PRSTDATE, PRENDATE
+                FROM PROJECT
+                FOR UPDATE OF PRSTDATE, PRENDATE;
+
+Ejemplo 5:  Este ejemplo denomina a la expresión SAL+BONUS+COMM como TOTAL_PAY
+
+   SELECT SALARY+BONUS+COMM AS TOTAL_PAY
+     FROM EMPLOYEE
+     ORDER BY TOTAL_PAY
+
+Ejemplo 6:  Determinación del número de empleado y el salario de los representantes de ventas junto con el salario medio y el número total de empleados de sus departamentos. También, listado del salario medio del departamento con el salario medio más alto.
+La utilización de una expresión de tabla común para este caso ahorra los recursos de proceso que implica la creación de la vista DIFO como una vista normal. Durante la preparación de la sentencia, se evita el acceso al catálogo para la vista y, debido al contexto del resto de la selección completa, la vista sólo considera las filas para el departamento de representantes de ventas.
+
+ WITH
+    DINFO (DEPTNO, AVGSALARY, EMPCOUNT) AS
+        (SELECT OTHERS.WORKDEPT, AVG(OTHERS.SALARY), COUNT(*)
+          FROM EMPLOYEE OTHERS
+          GROUP BY OTHERS.WORKDEPT
+        ),
+    DINFOMAX AS
+        (SELECT MAX(AVGSALARY) AS AVGMAX FROM DINFO)
+ SELECT THIS_EMP.EMPNO, THIS_EMP.SALARY,
+        DINFO.AVGSALARY, DINFO.EMPCOUNT, DINFOMAX.AVGMAX
+  FROM EMPLOYEE THIS_EMP, DINFO, DINFOMAX
+  WHERE THIS_EMP.JOB = 'SALESREP'
+  AND THIS_EMP.WORKDEPT = DINFO.DEPTNO
+
+Ejemplo 7:  Dadas dos tablas, EMPLOYEE y PROJECT, sustitución del empleado SALLY por el nuevo empleado GEORGE, asignación de todos los proyectos controlados por SALLY a GEORGE y devolución de los nombres de los proyectos actualizados.
+  WITH
+    NEWEMP AS (SELECT EMPNO FROM NEW TABLE
+                (INSERT INTO EMPLOYEE(EMPNO, FIRSTNME)
+                    VALUES(NEXT VALUE FOR EMPNO_SEQ, 'GEORGE'))),
+    OLDEMP AS (SELECT EMPNO FROM EMPLOYEE WHERE FIRSTNME = 'SALLY'),
+    UPPROJ AS (SELECT PROJNAME FROM NEW TABLE
+                (UPDATE PROJECT
+                    SET RESPEMP = (SELECT EMPNO FROM NEWEMP)
+                    WHERE RESPEMP = (SELECT EMPNO FROM OLDEMP))),
+    DELEMP AS (SELECT EMPNO FROM OLD TABLE
+                (DELETE FROM EMPLOYEE
+                    WHERE EMPNO = (SELECT EMPNO FROM OLDEMP)))
+  SELECT PROJNAME FROM UPPROJ;
+
+Ejemplo 8: Recuperación de los datos de la tabla DEPT. Esos datos se actualizarán posteriormente con una actualización buscada, y estarán bloqueados cuando se ejecute la consulta.
+
+  SELECT DEPTNO, DEPTNAME, MGRNO
+    FROM DEPT
+    WHERE ADMRDEPT ='A00'
+    FOR READ ONLY WITH RS USE AND KEEP EXCLUSIVE LOCKS
+
+Ejemplo 9: Seleccione todas las columnas y filas de la tabla EMPLOYEE. Si otra transacción está actualizando, suprimiendo o insertando datos de forma simultánea en la tabla EMPLOYEE, la operación select esperará hasta que se complete la otra transacción para obtener los datos.
+
+  SELECT * FROM EMPLOYEE WAIT FOR OUTCOME 
